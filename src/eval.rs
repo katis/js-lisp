@@ -65,12 +65,11 @@ impl<'a> Eval<'a> {
                 [] => Ok(Ast::Nil),
                 list => {
                     if let Some((proc, args)) = list.split_first() {
+                        let proc = self.eval(proc)?;
                         let mut eval_args = args
                             .iter()
                             .map(|arg| self.eval(arg))
                             .collect::<Result<Vec<_>>>()?;
-
-                        let proc = self.eval(proc)?;
                         self.call(proc, eval_args)
                     } else {
                         unreachable!()
@@ -82,26 +81,26 @@ impl<'a> Eval<'a> {
     }
 
     fn call(&self, proc: Ast<'a>, args: Vec<Ast<'a>>) -> Result<Ast<'a>> {
-        match proc {
-            Ast::Procedure {
-                id,
-                name,
-                min_arity,
-            } => {
-                if args.len() < min_arity {
-                    return Err(EvalError::ArityError {
-                        proc_name: name.into(),
-                        expected: min_arity,
-                        received: args.len(),
-                    });
-                }
-                let proc = &self.procs[id];
-                Ok((proc)(args))
+        if let Ast::Procedure {
+            id,
+            name,
+            min_arity,
+        } = proc
+        {
+            if args.len() < min_arity {
+                return Err(EvalError::ArityError {
+                    proc_name: name.into(),
+                    expected: min_arity,
+                    received: args.len(),
+                });
             }
-            ast => Err(EvalError::TypeError(format!(
+            let proc = &self.procs[id];
+            Ok((proc)(args))
+        } else {
+            Err(EvalError::TypeError(format!(
                 "expected a function, not {:?}",
-                ast
-            ))),
+                proc
+            )))
         }
     }
 }
