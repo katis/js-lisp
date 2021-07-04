@@ -95,9 +95,8 @@ impl LispParser {
     }
 
     fn quoted(input: Node) -> Result<Ast> {
-        let exprs = match_nodes!(input.into_children();
-            [expr(exprs)..] => exprs.collect());
-        Ok(Ast::Quoted(exprs))
+        let expr = LispParser::expr(input.into_children().single()?)?;
+        Ok(Ast::Quoted(Box::new(expr)))
     }
 }
 
@@ -115,7 +114,7 @@ pub enum Ast<'a> {
     Vector(Vec<Ast<'a>>),
     Map(Vec<(Ast<'a>, Ast<'a>)>),
     Set(Vec<Ast<'a>>),
-    Quoted(Vec<Ast<'a>>),
+    Quoted(Box<Ast<'a>>),
     Procedure {
         id: usize,
         name: &'a str,
