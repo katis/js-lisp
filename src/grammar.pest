@@ -20,7 +20,7 @@ import_output = _{ import_empty | import_vec | ident }
 import_pair = { string ~ import_output }
 imports = { "(" ~ import ~ (import_pair)+ ~ ")" }
 
-ident_symbol = { alpha | "-" | "_" }
+ident_symbol = { alpha | "-" | "_" | "?" | "*" | "/" }
 ident = @{ ident_symbol ~ (ident_symbol | digit)* }
 
 atom = ${ ":" ~ ident }
