@@ -104,7 +104,6 @@ type Procedure<'a> = Box<dyn Fn(Vec<Ast<'a>>) -> Ast<'a>>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Ast<'a> {
-    Nil,
     Integer(i64),
     Float(f64),
     String(&'a str),
@@ -115,11 +114,6 @@ pub enum Ast<'a> {
     Map(Vec<(Ast<'a>, Ast<'a>)>),
     Set(Vec<Ast<'a>>),
     Quoted(Box<Ast<'a>>),
-    Procedure {
-        id: usize,
-        name: &'a str,
-        min_arity: usize,
-    },
 }
 
 #[cfg(test)]

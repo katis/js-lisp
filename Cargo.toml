@@ -5,6 +5,7 @@ authors = ["Joni Katajamäki <joni.katajamaki@wunderdog.fi>"]
 edition = "2018"
 
 [dependencies]
+ordered-float = "2.5.1"
 pest = "2.1.3"
 pest_consume = "1.1.0"
 pest_derive = "2.1.0"

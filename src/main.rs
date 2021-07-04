@@ -6,7 +6,7 @@ mod eval;
 mod parser;
 
 fn main() {
-    let module = LispParser::parse(Rule::module, r#"(if 0 "ok" "err")"#)
+    let module = LispParser::parse(Rule::module, r#"(str {:baz (+ 1 2) :foo :bar})"#)
         .expect("failed to parse file")
         .next()
         .unwrap();
