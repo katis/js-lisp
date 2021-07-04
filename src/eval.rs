@@ -1,9 +1,9 @@
 use ordered_float::OrderedFloat;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 use std::{borrow::Cow, collections::HashMap, fmt::Display};
 
-use crate::{eval, parser::Ast};
+use crate::parser::Ast;
 
 type Procedure<'a> = Box<dyn Fn(Vec<Expr<'a>>) -> Result<Expr<'a>>>;
 
@@ -27,6 +27,7 @@ pub enum Expr<'a> {
     String(Cow<'a, str>),
     Atom(&'a str),
     Vector(Vec<Expr<'a>>),
+    Set(BTreeSet<Expr<'a>>),
     Map(BTreeMap<Expr<'a>, Expr<'a>>),
     Procedure {
         id: usize,
@@ -58,6 +59,17 @@ impl<'a> Display for Expr<'a> {
                     }
                 }
                 write!(f, "]")
+            }
+            Expr::Set(set) => {
+                write!(f, "#{{")?;
+                for (i, v) in set.iter().enumerate() {
+                    if i == 0 {
+                        write!(f, "{}", v)?;
+                    } else {
+                        write!(f, " {} ", v)?;
+                    }
+                }
+                write!(f, "}}")
             }
             Expr::Map(map) => {
                 write!(f, "{{")?;
@@ -126,7 +138,7 @@ impl<'a> Eval<'a> {
                 list => {
                     if let Some((proc, args)) = list.split_first() {
                         let proc = self.eval(proc)?;
-                        let mut eval_args = args
+                        let eval_args = args
                             .iter()
                             .map(|arg| self.eval(arg))
                             .collect::<Result<Vec<_>>>()?;
@@ -142,6 +154,13 @@ impl<'a> Eval<'a> {
                     .map(|item| self.eval(item))
                     .collect::<Result<Vec<_>>>()?;
                 Ok(Expr::Vector(items))
+            }
+            Ast::Set(set) => {
+                let set = set
+                    .iter()
+                    .map(|item| self.eval(item))
+                    .collect::<Result<BTreeSet<_>>>()?;
+                Ok(Expr::Set(set))
             }
             Ast::Map(map) => {
                 let mut result = BTreeMap::new();

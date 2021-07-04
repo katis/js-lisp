@@ -57,6 +57,7 @@ impl LispParser {
             Rule::symbol => LispParser::symbol(child),
             Rule::list => LispParser::list(child),
             Rule::vector => LispParser::vector(child),
+            Rule::set => LispParser::set(child),
             Rule::map => LispParser::map(child),
             Rule::quoted => LispParser::quoted(child),
             _ => unreachable!(),
