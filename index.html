@@ -20,7 +20,7 @@
       }
       textarea {
         width: 500px;
-        height: 160px;
+        min-height: 160px;
       }
       pre {
         width: 500px;
@@ -29,16 +29,26 @@
         padding: 12px;
       }
       .success {
-        background-color: palegreen;
+        background-color: rgb(185, 255, 185);
       }
       .error {
-        background-color: salmon;
+        background-color: rgb(255, 178, 169);
       }
     </style>
   </head>
   <body>
     <h1>Code</h1>
-    <textarea id="editor"></textarea>
+    <textarea id="editor">
+(fn fibo [n]
+  (let one 1)
+  (let two 2)
+  (if (< n two)
+      n
+      (+ (fibo (- n one)) (fibo (- n two)))))
+
+(let result (fibo 4))
+</textarea
+    >
     <h2>Transpiled</h2>
     <pre><code id="output"></code></pre>
     <h2>Output</h2>
@@ -65,11 +75,10 @@
           output.innerText = code;
           outputPre.classList.add("success");
           try {
-            let text = "";
             const mod = await evaluate(code);
-            Object.entries(mod).forEach(([key, value]) => {
-              text += `${key}: ${value}\n`;
-            });
+            const text = Object.entries(mod).reduce((text, [key, value]) => {
+              return text + `${key}: ${value}\n`;
+            }, "");
             result.innerText = text;
             resultPre.classList.add("success");
           } catch (e) {
@@ -89,7 +98,7 @@
           type: "text/javascript",
         });
         const url = URL.createObjectURL(blob);
-        return import(url);
+        return import(/* @vite-ignore */ url);
       }
 
       function debounce(func, timeout = 200) {
@@ -99,6 +108,8 @@
           timeoutId = setTimeout(() => func(...args), timeout);
         };
       }
+
+      updateOutput({ target: editor });
     </script>
   </body>
 </html>

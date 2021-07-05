@@ -14,7 +14,7 @@ char = {
 }
 
 symbol = ${ symbol_char ~ (symbol_char | digit)* }
-symbol_char = _{ alpha | "-" | "_" | "?" | "." | "+" | "/" | "*" | "=" }
+symbol_char = _{ alpha | "-" | "_" | "?" | "." | "+" | "/" | "*" | "=" | "<" | ">" }
 
 atom = ${ ":" ~ symbol }
 
