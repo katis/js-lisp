@@ -20,13 +20,18 @@
 
       editor.addEventListener("input", debounce(updateOutput));
 
-      function updateOutput(ev) {
+      async function updateOutput(ev) {
         try {
           result.style.backgroundColor = "palegreen";
           const code = transpile(ev.target.value);
           output.innerText = code;
           try {
-            result.innerText = "= " + eval(code);
+            let text = "";
+            const mod = await evaluate(code);
+            Object.entries(mod).forEach(([key, value]) => {
+              text += `${key} = ${value}\n`;
+            });
+            result.innerText = text;
           } catch (e) {
             result.style.backgroundColor = "salmon";
             result.innerText = "" + e;
@@ -37,6 +42,14 @@
           result.innerText = "";
           console.error(err);
         }
+      }
+
+      function evaluate(source) {
+        const blob = new Blob([source], {
+          type: "text/javascript",
+        });
+        const url = URL.createObjectURL(blob);
+        return import(url);
       }
 
       function debounce(func, timeout = 200) {
