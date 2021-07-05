@@ -64,8 +64,17 @@ pub enum Js {
         arguments: Vec<Js>,
         optional: bool,
     },
+    FunctionExpression {
+        id: Option<Box<Js>>,
+        params: Vec<Js>,
+        body: Box<Js>,
+        expression: bool,
+        generator: bool,
+        #[serde(rename = "async")]
+        is_async: bool,
+    },
     ArrowFunctionExpression {
-        id: Option<()>,
+        id: Option<Box<Js>>,
         params: Vec<Js>,
         body: Box<Js>,
         expression: bool,
@@ -328,7 +337,7 @@ fn ast_to_js(ast: &Ast) -> Js {
         Ast::Quoted(_) => todo!(),
         Ast::List(values) => match &values[..] {
             [] => undefined(),
-            [Ast::Symbol("def"), Ast::Symbol(name), expr] => {
+            [Ast::Symbol("let"), Ast::Symbol(name), expr] => {
                 let expr = ast_to_js(&expr);
                 Js::VariableDeclaration {
                     kind: VariableKind::Const,
@@ -345,6 +354,18 @@ fn ast_to_js(ast: &Ast) -> Js {
                 consequent: Box::new(ast_to_js(then)),
                 alternate: Box::new(ast_to_js(otherwise)),
             },
+            [Ast::Symbol("fn"), Ast::Symbol(name), Ast::Vector(params), body @ .., last] => {
+                Js::FunctionExpression {
+                    id: Some(Box::new(Js::Identifier {
+                        name: name.to_string(),
+                    })),
+                    params: params.iter().map(ast_to_js).collect(),
+                    body: Box::new(function_body(body, last)),
+                    expression: false,
+                    generator: false,
+                    is_async: false,
+                }
+            }
             [Ast::Symbol("fn"), Ast::Vector(params), body @ .., last] => {
                 Js::ArrowFunctionExpression {
                     id: None,
@@ -420,11 +441,13 @@ fn to_statement(js: Js) -> Js {
 
 fn export_declaration(js: Js) -> Js {
     match js {
-        Js::VariableDeclaration { .. } => Js::ExportNamedDeclaration {
-            declaration: Box::new(js),
-            source: None,
-            specifiers: Vec::new(),
-        },
+        Js::VariableDeclaration { .. } | Js::FunctionExpression { .. } => {
+            Js::ExportNamedDeclaration {
+                declaration: Box::new(js),
+                source: None,
+                specifiers: Vec::new(),
+            }
+        }
         js => js,
     }
 }
