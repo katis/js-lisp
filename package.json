@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "browser": "index.browser.js",
+  "type": "module",
   "scripts": {
+    "build": "npm run wasm-pack && npm run remove-extra-lib-files",
+    "build:dev": "npm run wasm-pack:dev && npm run remove-extra-lib-files",
+    "wasm-pack": "wasm-pack build --release --out-dir lib --no-typescript --target web",
+    "wasm-pack:dev": "wasm-pack build --out-dir lib --no-typescript --target web",
+    "remove-extra-lib-files": "rm lib/.gitignore lib/package.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,5 +18,8 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "astring": "^1.7.5"
+  },
+  "devDependencies": {
+    "vite": "^2.4.0"
   }
 }

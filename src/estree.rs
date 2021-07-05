@@ -3,10 +3,10 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
-#[serde(rename_all = "camelCase")]
 pub enum Js {
     Program {
         body: Vec<Js>,
+        #[serde(rename = "sourceType")]
         source_type: SourceType,
     },
     ExpressionStatement {
@@ -105,10 +105,7 @@ pub enum UnaryOperator {
 
 impl UnaryOperator {
     pub fn is(s: &str) -> bool {
-        match s {
-            "void" | "+" | "-" | "!" | "~" | "typeof" | "delete" => true,
-            _ => false,
-        }
+        matches!(s, "void" | "+" | "-" | "!" | "~" | "typeof" | "delete")
     }
 
     pub fn from(s: &str) -> Self {
@@ -176,11 +173,27 @@ pub enum BinaryOperator {
 
 impl BinaryOperator {
     pub fn is(s: &str) -> bool {
-        match s {
-            "==" | "!=" | "===" | "!==" | "<" | "<=" | ">" | ">=" | "<<" | ">>" | ">>>" | "+"
-            | "-" | "*" | "/" | "%" | "|" | "^" | "&" /* | "in" | "instanceof" */ => true,
-            _ => false,
-        }
+        matches!(
+            s,
+            "==" | "!="
+                | "==="
+                | "!=="
+                | "<"
+                | "<="
+                | ">"
+                | ">="
+                | "<<"
+                | ">>"
+                | ">>>"
+                | "+"
+                | "-"
+                | "*"
+                | "/"
+                | "%"
+                | "|"
+                | "^"
+                | "&"
+        )
     }
 
     pub fn from(s: &str) -> Self {
@@ -215,23 +228,6 @@ impl BinaryOperator {
 pub enum PropertyKind {
     #[serde(rename = "init")]
     Init,
-}
-
-pub fn test_ast() -> Js {
-    Js::Program {
-        source_type: SourceType::Module,
-        body: vec![Js::ExpressionStatement {
-            expression: Box::new(Js::BinaryExpression {
-                operator: BinaryOperator::Plus,
-                left: Box::new(Js::Literal {
-                    value: Value::Int(1),
-                }),
-                right: Box::new(Js::Literal {
-                    value: Value::Int(2),
-                }),
-            }),
-        }],
-    }
 }
 
 pub fn lisp_to_js(module: Vec<Ast>) -> Js {

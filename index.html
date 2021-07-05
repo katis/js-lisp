@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jasp</title>
+  </head>
+  <body>
+    <textarea id="editor" style="width: 500px; height: 300px"></textarea>
+    <div id="output" style="background-color: beige"></div>
+    <div id="result"></div>
+
+    <script type="module">
+      import { transpile } from "./index.browser.js";
+
+      const output = document.getElementById("output");
+      const editor = document.getElementById("editor");
+      const result = document.getElementById("result");
+
+      editor.addEventListener("input", debounce(updateOutput));
+
+      function updateOutput(ev) {
+        try {
+          result.style.backgroundColor = "palegreen";
+          const code = transpile(ev.target.value);
+          output.innerText = code;
+          result.innerText = "= " + eval(code);
+        } catch {
+          result.style.backgroundColor = "salmon";
+          output.innerText = "Invalid code";
+        }
+      }
+
+      function debounce(func, timeout = 200) {
+        let timeoutId;
+        return (...args) => {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => func(...args), timeout);
+        };
+      }
+    </script>
+  </body>
+</html>
