@@ -5,39 +5,79 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jasp</title>
+    <style>
+      :root {
+        font-family: sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      textarea {
+        width: 500px;
+        height: 160px;
+      }
+      pre {
+        width: 500px;
+        min-height: 40px;
+        background-color: gainsboro;
+        padding: 12px;
+      }
+      .success {
+        background-color: palegreen;
+      }
+      .error {
+        background-color: salmon;
+      }
+    </style>
   </head>
   <body>
-    <textarea id="editor" style="width: 500px; height: 300px"></textarea>
-    <div id="output" style="background-color: beige"></div>
-    <div id="result"></div>
+    <h1>Code</h1>
+    <textarea id="editor"></textarea>
+    <h2>Transpiled</h2>
+    <pre><code id="output"></code></pre>
+    <h2>Output</h2>
+    <pre><code id="result"></code></pre>
 
     <script type="module">
       import { transpile } from "./index.browser.js";
 
-      const output = document.getElementById("output");
       const editor = document.getElementById("editor");
+
+      const output = document.getElementById("output");
+      const outputPre = output.parentElement;
       const result = document.getElementById("result");
+      const resultPre = result.parentElement;
 
       editor.addEventListener("input", debounce(updateOutput));
 
       async function updateOutput(ev) {
         try {
-          result.style.backgroundColor = "palegreen";
+          outputPre.classList.remove("success", "error");
+          resultPre.classList.remove("success", "error");
+
           const code = transpile(ev.target.value);
           output.innerText = code;
+          outputPre.classList.add("success");
           try {
             let text = "";
             const mod = await evaluate(code);
             Object.entries(mod).forEach(([key, value]) => {
-              text += `${key} = ${value}\n`;
+              text += `${key}: ${value}\n`;
             });
             result.innerText = text;
+            resultPre.classList.add("success");
           } catch (e) {
-            result.style.backgroundColor = "salmon";
+            resultPre.classList.add("error");
             result.innerText = "" + e;
           }
         } catch (err) {
-          result.style.backgroundColor = "salmon";
+          outputPre.classList.add("error");
           output.innerText = "Invalid code";
           result.innerText = "";
           console.error(err);
