@@ -25,10 +25,17 @@
           result.style.backgroundColor = "palegreen";
           const code = transpile(ev.target.value);
           output.innerText = code;
-          result.innerText = "= " + eval(code);
-        } catch {
+          try {
+            result.innerText = "= " + eval(code);
+          } catch (e) {
+            result.style.backgroundColor = "salmon";
+            result.innerText = "" + e;
+          }
+        } catch (err) {
           result.style.backgroundColor = "salmon";
           output.innerText = "Invalid code";
+          result.innerText = "";
+          console.error(err);
         }
       }
 

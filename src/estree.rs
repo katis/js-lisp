@@ -59,6 +59,27 @@ pub enum Js {
         alternate: Box<Js>,
         consequent: Box<Js>,
     },
+    CallExpression {
+        callee: Box<Js>,
+        arguments: Vec<Js>,
+        optional: bool,
+    },
+}
+
+impl Js {
+    pub fn is_expression(&self) -> bool {
+        matches!(
+            self,
+            Js::Identifier { .. }
+                | Js::Literal { .. }
+                | Js::ObjectExpression { .. }
+                | Js::UnaryExpression { .. }
+                | Js::BinaryExpression { .. }
+                | Js::ConditionalExpression { .. }
+                | Js::NewExpression { .. }
+                | Js::CallExpression { .. }
+        )
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -217,6 +238,7 @@ impl BinaryOperator {
             "|" => BinaryOperator::Or,
             "^" => BinaryOperator::Xor,
             "&" => BinaryOperator::And,
+            "~" => BinaryOperator::Not,
             // "in" => BinaryOperator::In,
             // "instanceof" => BinaryOperator::Instanceof,
             s => panic!("Expected valid binary operator string, got {}", s),
@@ -232,7 +254,7 @@ pub enum PropertyKind {
 
 pub fn lisp_to_js(module: Vec<Ast>) -> Js {
     Js::Program {
-        body: module.iter().map(ast_to_js).collect(),
+        body: module.iter().map(ast_to_js).map(to_statement).collect(),
         source_type: SourceType::Module,
     }
 }
@@ -304,7 +326,11 @@ fn ast_to_js(ast: &Ast) -> Js {
             [Ast::Symbol(op), first, rest @ ..] if BinaryOperator::is(op) => {
                 binary_expr(BinaryOperator::from(op), first, rest)
             }
-            _ => todo!(),
+            [callee, arguments @ ..] => Js::CallExpression {
+                callee: Box::new(ast_to_js(callee)),
+                arguments: arguments.iter().map(ast_to_js).collect(),
+                optional: false,
+            },
         },
     }
 }
@@ -337,4 +363,14 @@ fn binary_expr(operator: BinaryOperator, first: &Ast, rest: &[Ast]) -> Js {
             left: Box::new(left),
             right: Box::new(right),
         })
+}
+
+fn to_statement(js: Js) -> Js {
+    if js.is_expression() {
+        Js::ExpressionStatement {
+            expression: Box::new(js),
+        }
+    } else {
+        js
+    }
 }
