@@ -64,6 +64,26 @@ pub enum Js {
         arguments: Vec<Js>,
         optional: bool,
     },
+    ArrowFunctionExpression {
+        id: Option<()>,
+        params: Vec<Js>,
+        body: Box<Js>,
+        expression: bool,
+        generator: bool,
+        #[serde(rename = "async")]
+        is_async: bool,
+    },
+    BlockStatement {
+        body: Vec<Js>,
+    },
+    ReturnStatement {
+        argument: Box<Js>,
+    },
+    ExportNamedDeclaration {
+        declaration: Box<Js>,
+        specifiers: Vec<Js>,
+        source: Option<Box<Js>>,
+    },
 }
 
 impl Js {
@@ -254,7 +274,12 @@ pub enum PropertyKind {
 
 pub fn lisp_to_js(module: Vec<Ast>) -> Js {
     Js::Program {
-        body: module.iter().map(ast_to_js).map(to_statement).collect(),
+        body: module
+            .iter()
+            .map(ast_to_js)
+            .map(export_declaration)
+            .map(to_statement)
+            .collect(),
         source_type: SourceType::Module,
     }
 }
@@ -320,6 +345,16 @@ fn ast_to_js(ast: &Ast) -> Js {
                 consequent: Box::new(ast_to_js(then)),
                 alternate: Box::new(ast_to_js(otherwise)),
             },
+            [Ast::Symbol("fn"), Ast::Vector(params), body @ .., last] => {
+                Js::ArrowFunctionExpression {
+                    id: None,
+                    params: params.iter().map(ast_to_js).collect(),
+                    body: Box::new(function_body(body, last)),
+                    expression: false,
+                    generator: false,
+                    is_async: false,
+                }
+            }
             [Ast::Symbol(op), arg] if UnaryOperator::is(op) => {
                 unary_expr(UnaryOperator::from(op), arg)
             }
@@ -333,6 +368,14 @@ fn ast_to_js(ast: &Ast) -> Js {
             },
         },
     }
+}
+
+fn function_body(body: &[Ast], last: &Ast) -> Js {
+    let mut body = body.iter().map(ast_to_js).collect::<Vec<_>>();
+    body.push(Js::ReturnStatement {
+        argument: Box::new(ast_to_js(last)),
+    });
+    Js::BlockStatement { body }
 }
 
 fn undefined() -> Js {
@@ -372,5 +415,16 @@ fn to_statement(js: Js) -> Js {
         }
     } else {
         js
+    }
+}
+
+fn export_declaration(js: Js) -> Js {
+    match js {
+        Js::VariableDeclaration { .. } => Js::ExportNamedDeclaration {
+            declaration: Box::new(js),
+            source: None,
+            specifiers: Vec::new(),
+        },
+        js => js,
     }
 }
