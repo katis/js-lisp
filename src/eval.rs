@@ -66,7 +66,7 @@ impl<'a> Display for Expr<'a> {
                     if i == 0 {
                         write!(f, "{}", v)?;
                     } else {
-                        write!(f, " {} ", v)?;
+                        write!(f, " {}", v)?;
                     }
                 }
                 write!(f, "}}")

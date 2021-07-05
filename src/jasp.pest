@@ -18,7 +18,7 @@ symbol_char = _{ alpha | "-" | "_" | "?" | "." | "+" | "/" | "*" | "=" }
 
 atom = ${ ":" ~ symbol }
 
-expr = { float | integer | string | atom | symbol | list | vector | map | quoted }
+expr = { float | integer | string | atom | symbol | list | vector | set | map | quoted }
 
 list = { "(" ~ (expr)* ~ ")" }
 vector = { "[" ~ (expr)* ~ "]" }
@@ -26,5 +26,4 @@ set = { "#{" ~ (expr)* ~ "}" }
 map = { "{" ~ (expr ~ expr)* ~ "}" }
 quoted = @{ "'" ~ expr }
 
-module = { SOI ~ (list)* ~ EOI }
-
+module = { SOI ~ (expr)* ~ EOI }

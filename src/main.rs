@@ -1,22 +1,31 @@
-use eval::Eval;
-use parser::{LispParser, Rule};
+use estree::lisp_to_js;
+use parser::{JaspParser, Rule};
 use pest_consume::Parser;
 
+mod estree;
 mod eval;
 mod parser;
 
 fn main() {
-    let module = LispParser::parse(Rule::module, r#"(str {:baz (+ 1 2) :foo :bar})"#)
-        .expect("failed to parse file")
+    let source = r#"
+        (def a (+ 1 2))
+
+        (def b (+ a 1))
+
+        (def c
+            {:ab (if (=== a b) a b)})
+    "#;
+
+    let module = JaspParser::parse(Rule::module, &source)
+        .expect("module parsing failed")
         .next()
         .unwrap();
 
-    let ast_list = LispParser::module(module).expect("failed to parse module");
+    let statements = JaspParser::module(module).expect("failed to parse module");
 
-    let mut eval = Eval::new();
+    let tree = lisp_to_js(statements);
 
-    for ast in ast_list.iter() {
-        let evaled = eval.eval(&ast);
-        println!("{:?}", evaled);
-    }
+    let str = serde_json::to_string_pretty(&tree).unwrap();
+
+    println!("{}", str);
 }

@@ -4,14 +4,14 @@ pub type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
 pub type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 
 #[derive(Parser)]
-#[grammar = "grammar2.pest"]
-pub struct LispParser;
+#[grammar = "jasp.pest"]
+pub struct JaspParser;
 
 #[pest_consume::parser]
-impl LispParser {
+impl JaspParser {
     pub fn module(input: Node) -> Result<Vec<Ast>> {
         let statements = match_nodes!(input.into_children();
-            [list(lists).., EOI(_)] => lists.collect());
+            [expr(lists).., EOI(_)] => lists.collect());
         Ok(statements)
     }
 
@@ -50,16 +50,16 @@ impl LispParser {
     fn expr(input: Node) -> Result<Ast> {
         let child = input.children().single()?;
         match child.as_rule() {
-            Rule::float => LispParser::float(child),
-            Rule::integer => LispParser::integer(child),
-            Rule::string => LispParser::string(child),
-            Rule::atom => LispParser::atom(child),
-            Rule::symbol => LispParser::symbol(child),
-            Rule::list => LispParser::list(child),
-            Rule::vector => LispParser::vector(child),
-            Rule::set => LispParser::set(child),
-            Rule::map => LispParser::map(child),
-            Rule::quoted => LispParser::quoted(child),
+            Rule::float => JaspParser::float(child),
+            Rule::integer => JaspParser::integer(child),
+            Rule::string => JaspParser::string(child),
+            Rule::atom => JaspParser::atom(child),
+            Rule::symbol => JaspParser::symbol(child),
+            Rule::list => JaspParser::list(child),
+            Rule::vector => JaspParser::vector(child),
+            Rule::set => JaspParser::set(child),
+            Rule::map => JaspParser::map(child),
+            Rule::quoted => JaspParser::quoted(child),
             _ => unreachable!(),
         }
     }
@@ -96,12 +96,10 @@ impl LispParser {
     }
 
     fn quoted(input: Node) -> Result<Ast> {
-        let expr = LispParser::expr(input.into_children().single()?)?;
+        let expr = JaspParser::expr(input.into_children().single()?)?;
         Ok(Ast::Quoted(Box::new(expr)))
     }
 }
-
-type Procedure<'a> = Box<dyn Fn(Vec<Ast<'a>>) -> Ast<'a>>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Ast<'a> {
@@ -122,14 +120,14 @@ mod tests {
     use super::*;
 
     fn parse(rule: Rule, input_str: &str, map: impl Fn(Node) -> Result<Ast>) -> Result<Ast> {
-        let inputs = LispParser::parse(rule, input_str).unwrap();
+        let inputs = JaspParser::parse(rule, input_str).unwrap();
         // There should be a single root node in the parsed tree
         map(inputs.single().unwrap())
     }
 
     macro_rules! parse_as {
         ($i:ident, $input:expr) => {
-            parse(Rule::$i, $input, LispParser::$i)
+            parse(Rule::$i, $input, JaspParser::$i)
         };
     }
 
@@ -210,20 +208,6 @@ mod tests {
         assert_eq!(
             result,
             Ok(Ast::Set(vec![Ast::Atom("foo"), Ast::Atom("bar")]))
-        )
-    }
-
-    #[test]
-    fn test_module() {
-        let result = parse_as!(module, r#"(import :default "foo.js" foo)"#);
-        assert_eq!(
-            result,
-            Ok(Ast::List(vec![Ast::List(vec![
-                Ast::Symbol("import"),
-                Ast::Atom("default"),
-                Ast::String("foo.js"),
-                Ast::Symbol("foo")
-            ])]))
         )
     }
 }
