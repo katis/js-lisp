@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pest_consume::{match_nodes, Parser};
 
 pub type Result<T> = std::result::Result<T, pest_consume::Error<Rule>>;
@@ -15,7 +17,7 @@ impl JaspParser {
         Ok(statements)
     }
 
-    fn EOI(input: Node) -> Result<()> {
+    fn EOI(_: Node) -> Result<()> {
         Ok(())
     }
 
@@ -36,15 +38,15 @@ impl JaspParser {
     }
 
     fn string(input: Node) -> Result<Ast> {
-        Ok(Ast::String(input.children().single()?.as_str()))
+        Ok(Ast::String(input.children().single()?.as_str().into()))
     }
 
     fn symbol(input: Node) -> Result<Ast> {
-        Ok(Ast::Symbol(input.as_str()))
+        Ok(Ast::Symbol(input.as_str().into()))
     }
 
-    fn atom(input: Node) -> Result<Ast> {
-        Ok(Ast::Atom(input.children().single()?.as_str()))
+    fn keyword(input: Node) -> Result<Ast> {
+        Ok(Ast::Keyword(input.children().single()?.as_str().into()))
     }
 
     fn expr(input: Node) -> Result<Ast> {
@@ -53,7 +55,7 @@ impl JaspParser {
             Rule::float => JaspParser::float(child),
             Rule::integer => JaspParser::integer(child),
             Rule::string => JaspParser::string(child),
-            Rule::atom => JaspParser::atom(child),
+            Rule::keyword => JaspParser::keyword(child),
             Rule::symbol => JaspParser::symbol(child),
             Rule::list => JaspParser::list(child),
             Rule::vector => JaspParser::vector(child),
@@ -105,9 +107,9 @@ impl JaspParser {
 pub enum Ast<'a> {
     Integer(i64),
     Float(f64),
-    String(&'a str),
-    Atom(&'a str),
-    Symbol(&'a str),
+    String(Cow<'a, str>),
+    Keyword(Cow<'a, str>),
+    Symbol(Cow<'a, str>),
     List(Vec<Ast<'a>>),
     Vector(Vec<Ast<'a>>),
     Map(Vec<(Ast<'a>, Ast<'a>)>),
@@ -146,25 +148,25 @@ mod tests {
     #[test]
     fn test_string() {
         let result = parse_as!(string, "\"foo bar? foo.\"");
-        assert_eq!(result, Ok(Ast::String("foo bar? foo.")))
+        assert_eq!(result, Ok(Ast::String("foo bar? foo.".into())))
     }
 
     #[test]
     fn test_symbol() {
         let result = parse_as!(symbol, "foo-bar?");
-        assert_eq!(result, Ok(Ast::Symbol("foo-bar?")))
+        assert_eq!(result, Ok(Ast::Symbol("foo-bar?".into())))
     }
 
     #[test]
     fn test_atom() {
-        let result = parse_as!(atom, ":foo-bar?");
-        assert_eq!(result, Ok(Ast::Atom("foo-bar?")))
+        let result = parse_as!(keyword, ":foo-bar?");
+        assert_eq!(result, Ok(Ast::Keyword("foo-bar?".into())))
     }
 
     #[test]
     fn test_expr() {
         let result = parse_as!(expr, ":foo-bar?");
-        assert_eq!(result, Ok(Ast::Atom("foo-bar?")))
+        assert_eq!(result, Ok(Ast::Keyword("foo-bar?".into())))
     }
 
     #[test]
@@ -173,9 +175,9 @@ mod tests {
         assert_eq!(
             result,
             Ok(Ast::List(vec![
-                Ast::Symbol("foo"),
-                Ast::Atom("bar"),
-                Ast::String("baz"),
+                Ast::Symbol("foo".into()),
+                Ast::Keyword("bar".into()),
+                Ast::String("baz".into()),
             ]))
         )
     }
@@ -186,9 +188,9 @@ mod tests {
         assert_eq!(
             result,
             Ok(Ast::Vector(vec![
-                Ast::Symbol("foo"),
-                Ast::Atom("bar"),
-                Ast::String("baz"),
+                Ast::Symbol("foo".into()),
+                Ast::Keyword("bar".into()),
+                Ast::String("baz".into()),
             ]))
         )
     }
@@ -198,7 +200,7 @@ mod tests {
         let result = parse_as!(map, "{:foo :bar}");
         assert_eq!(
             result,
-            Ok(Ast::Map(vec![(Ast::Atom("foo"), Ast::Atom("bar"))]))
+            Ok(Ast::Map(vec![(Ast::Keyword("foo".into()), Ast::Keyword("bar".into()))]))
         )
     }
 
@@ -207,7 +209,7 @@ mod tests {
         let result = parse_as!(set, "#{:foo :bar}");
         assert_eq!(
             result,
-            Ok(Ast::Set(vec![Ast::Atom("foo"), Ast::Atom("bar")]))
+            Ok(Ast::Set(vec![Ast::Keyword("foo".into()), Ast::Keyword("bar".into())]))
         )
     }
 }

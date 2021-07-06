@@ -55,7 +55,7 @@
     <pre><code id="result"></code></pre>
 
     <script type="module">
-      import { transpile } from "./index.browser.js";
+      import {transpile, evaluateJs} from "./index.browser.js";
 
       const editor = document.getElementById("editor");
 
@@ -75,12 +75,15 @@
           output.innerText = code;
           outputPre.classList.add("success");
           try {
-            const mod = await evaluate(code);
-            const text = Object.entries(mod).reduce((text, [key, value]) => {
-              return text + `${key}: ${value}\n`;
-            }, "");
-            result.innerText = text;
-            resultPre.classList.add("success");
+              const mod = await evaluateJs(code);
+              const text =
+                  "{\n" +
+                  Object.entries(mod)
+                      .map(([key, value]) => `  ${key}: ${value},`)
+                      .join("\n");
+              +"}";
+              result.innerText = text;
+              resultPre.classList.add("success");
           } catch (e) {
             resultPre.classList.add("error");
             result.innerText = "" + e;
@@ -91,14 +94,6 @@
           result.innerText = "";
           console.error(err);
         }
-      }
-
-      function evaluate(source) {
-        const blob = new Blob([source], {
-          type: "text/javascript",
-        });
-        const url = URL.createObjectURL(blob);
-        return import(/* @vite-ignore */ url);
       }
 
       function debounce(func, timeout = 200) {

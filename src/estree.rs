@@ -1,5 +1,6 @@
-use crate::parser::Ast;
 use serde::Serialize;
+
+use crate::parser::Ast;
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type")]
@@ -304,12 +305,13 @@ fn ast_to_js(ast: &Ast) -> Js {
         Ast::String(s) => Js::Literal {
             value: Value::String(s.to_string()),
         },
-        Ast::Atom(s) => Js::Literal {
+        Ast::Keyword(s) => Js::Literal {
             value: Value::String(s.to_string()),
         },
         Ast::Symbol(name) => Js::Identifier {
             name: name.to_string(),
         },
+        Ast::List(values) => list(&values),
         Ast::Vector(values) => Js::ArrayExpression {
             elements: values.iter().map(ast_to_js).collect(),
         },
@@ -335,58 +337,70 @@ fn ast_to_js(ast: &Ast) -> Js {
             }],
         },
         Ast::Quoted(_) => todo!(),
-        Ast::List(values) => match &values[..] {
-            [] => undefined(),
-            [Ast::Symbol("let"), Ast::Symbol(name), expr] => {
-                let expr = ast_to_js(&expr);
-                Js::VariableDeclaration {
-                    kind: VariableKind::Const,
-                    declarations: vec![Js::VariableDeclarator {
-                        id: Box::new(Js::Identifier {
-                            name: name.to_string(),
-                        }),
-                        init: Some(Box::new(expr)),
-                    }],
-                }
-            }
-            [Ast::Symbol("if"), test, then, otherwise] => Js::ConditionalExpression {
-                test: Box::new(ast_to_js(test)),
-                consequent: Box::new(ast_to_js(then)),
-                alternate: Box::new(ast_to_js(otherwise)),
-            },
-            [Ast::Symbol("fn"), Ast::Symbol(name), Ast::Vector(params), body @ .., last] => {
-                Js::FunctionExpression {
-                    id: Some(Box::new(Js::Identifier {
+    }
+}
+
+fn list(values: &[Ast]) -> Js {
+    match values {
+        [] => undefined(),
+        [Ast::Symbol(sym), rest @ ..] => list_call(sym.as_ref(), rest),
+        [callee, arguments @ ..] => Js::CallExpression {
+            callee: Box::new(ast_to_js(callee)),
+            arguments: arguments.iter().map(ast_to_js).collect(),
+            optional: false,
+        },
+    }
+}
+
+fn list_call(symbol: &str, values: &[Ast]) -> Js {
+    match (symbol, values) {
+        ("let", [Ast::Symbol(name), expr]) => {
+            let expr = ast_to_js(&expr);
+            Js::VariableDeclaration {
+                kind: VariableKind::Const,
+                declarations: vec![Js::VariableDeclarator {
+                    id: Box::new(Js::Identifier {
                         name: name.to_string(),
-                    })),
-                    params: params.iter().map(ast_to_js).collect(),
-                    body: Box::new(function_body(body, last)),
-                    expression: false,
-                    generator: false,
-                    is_async: false,
-                }
+                    }),
+                    init: Some(Box::new(expr)),
+                }],
             }
-            [Ast::Symbol("fn"), Ast::Vector(params), body @ .., last] => {
-                Js::ArrowFunctionExpression {
-                    id: None,
-                    params: params.iter().map(ast_to_js).collect(),
-                    body: Box::new(function_body(body, last)),
-                    expression: false,
-                    generator: false,
-                    is_async: false,
-                }
+        }
+        ("if", [test, then, otherwise]) => Js::ConditionalExpression {
+            test: Box::new(ast_to_js(test)),
+            consequent: Box::new(ast_to_js(then)),
+            alternate: Box::new(ast_to_js(otherwise)),
+        },
+        ("fn", [Ast::Symbol(name), Ast::Vector(params), body @ .., last]) => {
+            Js::FunctionExpression {
+                id: Some(Box::new(Js::Identifier {
+                    name: name.to_string(),
+                })),
+                params: params.iter().map(ast_to_js).collect(),
+                body: Box::new(function_body(body, last)),
+                expression: false,
+                generator: false,
+                is_async: false,
             }
-            [Ast::Symbol(op), arg] if UnaryOperator::is(op) => {
-                unary_expr(UnaryOperator::from(op), arg)
-            }
-            [Ast::Symbol(op), first, rest @ ..] if BinaryOperator::is(op) => {
-                binary_expr(BinaryOperator::from(op), first, rest)
-            }
-            [callee, arguments @ ..] => Js::CallExpression {
-                callee: Box::new(ast_to_js(callee)),
-                arguments: arguments.iter().map(ast_to_js).collect(),
-                optional: false,
-            },
+        }
+        ("fn", [Ast::Vector(params), body @ .., last]) => Js::ArrowFunctionExpression {
+            id: None,
+            params: params.iter().map(ast_to_js).collect(),
+            body: Box::new(function_body(body, last)),
+            expression: false,
+            generator: false,
+            is_async: false,
+        },
+        (op, [arg]) if UnaryOperator::is(op) => unary_expr(UnaryOperator::from(op), arg),
+        (op, [first, rest @ ..]) if BinaryOperator::is(op) => {
+            binary_expr(BinaryOperator::from(op), first, rest)
+        }
+        (callee, arguments) => Js::CallExpression {
+            callee: Box::new(Js::Identifier {
+                name: callee.to_string(),
+            }),
+            arguments: arguments.iter().map(ast_to_js).collect(),
+            optional: false,
         },
     }
 }

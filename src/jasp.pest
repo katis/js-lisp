@@ -16,9 +16,9 @@ char = {
 symbol = ${ symbol_char ~ (symbol_char | digit)* }
 symbol_char = _{ alpha | "-" | "_" | "?" | "." | "+" | "/" | "*" | "=" | "<" | ">" }
 
-atom = ${ ":" ~ symbol }
+keyword = ${ ":" ~ symbol }
 
-expr = { float | integer | string | atom | symbol | list | vector | set | map | quoted }
+expr = { float | integer | string | keyword | symbol | list | vector | set | map | quoted }
 
 list = { "(" ~ (expr)* ~ ")" }
 vector = { "[" ~ (expr)* ~ "]" }
