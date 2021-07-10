@@ -9,28 +9,35 @@
       :root {
         font-family: sans-serif;
       }
+
       * {
         box-sizing: border-box;
       }
+
       h1 {
         font-size: 24px;
       }
+
       h2 {
         font-size: 20px;
       }
+
       textarea {
         width: 500px;
         min-height: 160px;
       }
+
       pre {
         width: 500px;
         min-height: 40px;
         background-color: gainsboro;
         padding: 12px;
       }
+
       .success {
         background-color: rgb(185, 255, 185);
       }
+
       .error {
         background-color: rgb(255, 178, 169);
       }
@@ -48,50 +55,52 @@
 
 (let result (fibo 4))
 </textarea
-    >
+>
     <h2>Transpiled</h2>
-    <pre><code id="output"></code></pre>
+    <pre><code id='output'></code></pre>
     <h2>Output</h2>
-    <pre><code id="result"></code></pre>
+    <pre><code id='result'></code></pre>
 
-    <script type="module">
-      import {transpile, evaluateJs} from "./index.browser.js";
+    <button id='btn'>Start</button>
 
-      const editor = document.getElementById("editor");
+    <script type='module'>
+      import { compile, evaluate } from './index.browser.js';
 
-      const output = document.getElementById("output");
+      const editor = document.getElementById('editor');
+
+      const output = document.getElementById('output');
       const outputPre = output.parentElement;
-      const result = document.getElementById("result");
+      const result = document.getElementById('result');
       const resultPre = result.parentElement;
 
-      editor.addEventListener("input", debounce(updateOutput));
+      editor.addEventListener('input', debounce(updateOutput));
 
       async function updateOutput(ev) {
         try {
-          outputPre.classList.remove("success", "error");
-          resultPre.classList.remove("success", "error");
+          outputPre.classList.remove('success', 'error');
+          resultPre.classList.remove('success', 'error');
 
-          const code = transpile(ev.target.value);
-          output.innerText = code;
-          outputPre.classList.add("success");
+          const source = compile(ev.target.value);
+          output.innerText = source;
+          outputPre.classList.add('success');
           try {
-              const mod = await evaluateJs(code);
-              const text =
-                  "{\n" +
-                  Object.entries(mod)
-                      .map(([key, value]) => `  ${key}: ${value},`)
-                      .join("\n");
-              +"}";
-              result.innerText = text;
-              resultPre.classList.add("success");
+            const mod = await evaluate(source);
+            const text =
+              '{\n' +
+              Object.entries(mod)
+                .map(([key, value]) => `  ${key}: ${value},`)
+                .join('\n') +
+              '}';
+            result.innerText = text;
+            resultPre.classList.add('success');
           } catch (e) {
-            resultPre.classList.add("error");
-            result.innerText = "" + e;
+            resultPre.classList.add('error');
+            result.innerText = '' + e;
           }
         } catch (err) {
-          outputPre.classList.add("error");
-          output.innerText = "Invalid code";
-          result.innerText = "";
+          outputPre.classList.add('error');
+          output.innerText = 'Invalid code';
+          result.innerText = '';
           console.error(err);
         }
       }

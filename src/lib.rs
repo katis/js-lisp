@@ -1,27 +1,38 @@
-use pest_consume::Parser;
+use std::panic;
+
+use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
-use estree::lisp_to_js;
-use parser::{JaspParser, Rule};
+use crate::compiler::Compiler;
 
-mod estree;
-mod homoglyphs;
-mod parser;
-mod serialization;
+mod api;
+mod ast;
+mod compiler;
+mod es;
+mod jasp_parser;
+mod js_types;
+mod util;
 
 #[cfg(feature = "wee_alloc")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn transpile(source: String) -> String {
-    let module = JaspParser::parse(Rule::module, &source)
-        .expect("module parsing failed")
-        .next()
-        .unwrap();
+pub fn start() {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+}
 
-    let statements = JaspParser::module(module).expect("failed to parse module");
-    let tree = lisp_to_js(statements);
+#[wasm_bindgen]
+pub fn parse(source: String) -> JsValue {
+    let lines = jasp_parser::parse(&source).expect("compilation failed");
+    let mut compiler = Compiler::new();
+    let estree = compiler.compile_ast(lines).expect("compilation failed");
+    serde_wasm_bindgen::to_value(&estree).expect("could not convert estree to JsValue")
+}
 
-    serde_json::to_string_pretty(&tree).unwrap()
+#[wasm_bindgen]
+pub fn compile(array: Array) -> JsValue {
+    let mut compiler = Compiler::new();
+    let estree = compiler.compile(&array.into()).expect("compilation failed");
+    serde_wasm_bindgen::to_value(&estree).expect("could not convert estree to JsValue")
 }

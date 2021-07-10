@@ -1,8 +1,8 @@
-import { generate } from "astring";
-import * as jasp from "./lib/jasp.js";
-import * as fs from "fs/promises";
+import { generate } from 'astring';
+import * as jasp from './lib/jasp.js';
+import * as fs from 'fs/promises';
 
-const wasm = await fs.readFile("./lib/jasp_bg.wasm");
+const wasm = await fs.readFile('./lib/jasp_bg.wasm');
 await jasp.default(wasm.buffer);
 
 export function transpile(source) {

@@ -1,30 +1,19 @@
-import {generate} from "astring";
-import * as jasp from "./lib/jasp.js";
+import { generate } from 'astring';
+import * as jasp from './lib/jasp.js';
 
 await jasp.default();
+jasp.start();
 
-export function parse(source) {
-  const astString = jasp.transpile(source);
-  return JSON.parse(astString);
-}
+export const parse = source => jasp.parse(source);
 
-export function transpile(source) {
-  return generate(parse(source));
-}
+export const compile = source => generate(parse(source));
 
-export function evaluate(source) {
-  const jsSrc = transpile(source);
-  return evaluateJs(jsSrc);
-}
+export const compileAst = programAst => generate(jasp.compile(programAst));
 
-export function evaluateJs(source) {
+export const evaluate = source => {
   const blob = new Blob([source], {
-    type: "text/javascript",
+    type: 'text/javascript',
   });
   const url = URL.createObjectURL(blob);
-  return import(/* @vite-ignore */ url);
-}
-
-export function serialize(ast) {
-  jasp.serialize(ast);
-}
+  return import(url);
+};

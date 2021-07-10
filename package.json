@@ -12,7 +12,11 @@
     "wasm-pack": "wasm-pack build --release --out-dir lib --no-typescript --target web",
     "wasm-pack:dev": "wasm-pack build --out-dir lib --no-typescript --target web",
     "remove-extra-lib-files": "rm lib/.gitignore lib/package.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:debug": "node --inspect --experimental-vm-modules ./node_modules/.bin/jest --runInBand --watch"
+  },
+  "jest": {
+    "transform": {}
   },
   "keywords": [],
   "author": "Joni Katajamäki",
@@ -21,6 +25,9 @@
     "astring": "^1.7.5"
   },
   "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "babel-jest": "^27.0.6",
+    "jest": "^27.0.6",
     "vite": "^2.4.0"
   }
 }

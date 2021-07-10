@@ -18,12 +18,12 @@ symbol_char = _{ alpha | "-" | "_" | "?" | "." | "+" | "/" | "*" | "=" | "<" | "
 
 keyword = ${ ":" ~ symbol }
 
-expr = { float | integer | string | keyword | symbol | list | vector | set | map | quoted }
+expr = { float | integer | string | keyword | symbol | list | vector | object | quoted }
 
 list = { "(" ~ (expr)* ~ ")" }
 vector = { "[" ~ (expr)* ~ "]" }
-set = { "#{" ~ (expr)* ~ "}" }
-map = { "{" ~ (expr ~ expr)* ~ "}" }
+object = { "{" ~ (object_key ~ expr)* ~ "}" }
+object_key = _{ symbol | string | list }
 quoted = @{ "'" ~ expr }
 
 module = { SOI ~ (expr)* ~ EOI }
