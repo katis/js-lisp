@@ -1,7 +1,7 @@
 // @ts-check
 
 import { Eq, equals } from './common';
-import { extendProtocol } from './protocol';
+import { extend } from './protocol';
 
 const WIDTH_BITS = 5,
   NODE_WIDTH = 1 << WIDTH_BITS,
@@ -45,7 +45,7 @@ class Vec {
   }
 }
 
-extendProtocol(Vec, Eq, {
+extend(Vec, Eq, {
   equals(other) {
     if (!other[$root] || this[$size] !== other.size) return false;
 
@@ -95,13 +95,13 @@ const lengthToDepth = length =>
  * @returns {Vec}
  */
 export const vec = (...items) =>
-  items.length === 0 ? vecLiteral() : vecLiteral(items);
+  items.length === 0 ? __vecLiteral() : __vecLiteral(items);
 
 /**
  * @param {any[]} [items]
  * @returns {Vec}
  */
-export const vecLiteral = items => {
+export const __vecLiteral = items => {
   if (!items) {
     return EMPTY;
   } else if (items.length <= NODE_WIDTH) {

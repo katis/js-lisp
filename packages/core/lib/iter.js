@@ -134,49 +134,21 @@ class Take extends IterableTransformer {
     if (this.n++ >= this.count) {
       return done;
     }
-    return this.iterable.next();
+    return this.iterator.next();
   }
 }
 
-const reduce = (iterable, init, fn) => {
+export const reduce = (iterable, init, fn) => {
   const iterator = iterable[Symbol.iterator]();
   let previous = init;
   let result;
-  while (((result = iterator.next()), !result.done)) {
+  while ((result = iterator.next()), !result.done) {
     previous = fn(previous, result.value);
   }
   return previous;
 };
 
-const updatedResult = (result, value) => {
-  result.value = value;
-  return result;
-};
-
-const map = (iterable, fn) => new MapIterator(iterable, fn);
-const filter = (iterable, predicate) => new FilterIterator(iterable, predicate);
-const flatMap = (iterable, fn) => new FlatMapIterator(iterable, fn);
-const take = (iterable, count) => new Take(iterable, count);
-const toArray = iterable => [...iterable];
-
-const pipe =
-    (...fns) =>
-        value =>
-            fns.reduce((result, fn) => fn(result), value);
-
-const foo = pipe(
-    $ => map($, i => i * 2),
-    $ => filter($, n => n > 4),
-    $ => flatMap($, n => [n, '|']),
-    $ => take($, 4),
-    $ => reduce($, 0, (prev, i) => prev + i),
-);
-
-for (let i = 0; i < 10000; i++) {
-  const a = foo(vec([1, i, 3, 4, 5])); /*?.*/
-  const b = foo([1, i, 3, 4, 5, 7]); /*?.*/
-}
-
-// for (let i = 0; i < 10000; i++) {
-//   const b = foo([1, i, 3, 4, 5, 7]) /*?.*/
-// }
+export const map = (iterable, fn) => new MapIterator(iterable, fn);
+export const filter = (iterable, predicate) => new FilterIterator(iterable, predicate);
+export const flatMap = (iterable, fn) => new FlatMapIterator(iterable, fn);
+export const take = (iterable, count) => new Take(iterable, count);

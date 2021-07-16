@@ -1,0 +1,107 @@
+import { Lexer } from "./Lexer";
+import {
+  Identifier,
+  Keyword,
+  LBrace,
+  LBracket,
+  LParen,
+  NewToken,
+  Num,
+  Quote,
+  RBrace,
+  RBracket,
+  RParen,
+  Str,
+  Token,
+} from "./Token";
+
+export class Tokenizer extends Lexer<Token> {
+  constructor(input: string) {
+    super(input, lexBody);
+  }
+}
+
+const singleTokens: ReadonlyMap<string, NewToken> = new Map([
+  ["(", LParen],
+  [")", RParen],
+  ["[", LBracket],
+  ["]", RBracket],
+  ["{", LBrace],
+  ["}", RBrace],
+  ["'", Quote],
+] as [string, NewToken][]);
+
+const constTokens =
+  /^((\*\*)|(<=)|(>=)|(==)|(<)|(>)|(\*)|(\+)|(-)|(\/)|(%)|(=))/;
+const wsRe = /^[,\s]+/;
+const identRe = /^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\u200C\u200D]*/u;
+const separatorRe = /^[\(\)\[\]\{\}\s,\"]/;
+const numRe = /^[-+]?\d+\.?(\d*)?/;
+
+let isSeparator = (c: string) => c == "" || separatorRe.test(c);
+
+function lexBody(this: Tokenizer) {
+  this.ignoreMatch(wsRe);
+
+  if (this.acceptMatch(numRe) && isSeparator(this.peek())) {
+    this.emit(Num);
+    return lexBody;
+  }
+
+  if (this.acceptMatch(constTokens)) {
+    const c = this.peek();
+    if (isSeparator(c)) {
+      this.emit(Identifier);
+      return lexBody;
+    } else {
+      throw Error(`invalid character "${c}"`);
+    }
+  }
+
+  const c = this.accept();
+  const newSingle = singleTokens.get(c);
+  if (newSingle) {
+    this.emit(newSingle);
+    return lexBody;
+  } else if (c === '"') {
+    this.ignore();
+    return lexString;
+  } else if (identRe.test(c)) {
+    this.backup();
+    return lexIdentifier;
+  } else if (c === ":") {
+    this.ignore();
+    return lexKeyword;
+  } else if (c === "") {
+    return undefined;
+  }
+  throw Error(`invalid character ${c}`);
+}
+
+function lexString(this: Tokenizer) {
+  const c = this.accept();
+  if (c === '"') {
+    this.emit(Str);
+    this.ignore();
+    return lexBody;
+  } else if (c === "\\") {
+    this.accept();
+    return lexString;
+  } else if (c === "") {
+    throw Error("unterminated string");
+  }
+  return lexString;
+}
+
+const identifierLexer = (newToken: NewToken) =>
+  function (this: Tokenizer) {
+    if (this.acceptMatch(identRe) && isSeparator(this.peek())) {
+      this.emit(newToken);
+      return lexBody;
+    } else {
+      throw Error(`invalid ${newToken.name.toLocaleLowerCase()}`);
+    }
+  };
+
+const lexIdentifier = identifierLexer(Identifier);
+const lexKeyword = identifierLexer(Keyword);

@@ -1,3 +1,4 @@
 {
-  "editor.tabSize": 4
+  "editor.tabSize": 4,
+  "jestrunner.jestCommand": "NODE_OPTIONS=--experimental-vm-modules npm run test --"
 }
