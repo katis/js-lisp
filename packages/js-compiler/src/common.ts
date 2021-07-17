@@ -20,6 +20,10 @@ export class Span {
   spanTo(endSpan: Span): Span {
     return new Span(this.start, endSpan.end);
   }
+
+  toString(): string {
+    return `${this.start}-${this.end}`;
+  }
 }
 
 export abstract class SourceItem extends Span {

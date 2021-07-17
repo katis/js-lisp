@@ -27,6 +27,10 @@ export class Lexer<Token> implements IterableIterator<Token> {
     return this.input.slice(this.end);
   }
 
+  get span(): Span {
+    return new Span(this.start, this.end);
+  }
+
   private get current() {
     const codep = this.input.codePointAt(this.end);
     if (codep === undefined) return "";

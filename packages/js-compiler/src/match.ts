@@ -7,6 +7,8 @@ export type AnyAst = typeof anyAst;
 
 export type Pattern = string | AnyAst | (new (...args: any[]) => Ast);
 
+export type ListPattern = IList<Pattern>;
+
 export type Match<T> = T extends AnyAst
   ? Ast
   : T extends string
@@ -65,4 +67,14 @@ export function matchEvery<Items extends IList<Ast>, P extends Pattern>(
   // @ts-expect-error
 ): items is Matched<IList<P>> {
   return items.every((item) => match(item, pattern));
+}
+
+export function withMatch<
+  R,
+  Items extends IList<Ast>,
+  P extends readonly Pattern[]
+>(items: Items, pattern: P, fn: (matched: Matched<P>) => R): R | undefined {
+  if (matches(items, pattern)) {
+    return fn(items);
+  }
 }

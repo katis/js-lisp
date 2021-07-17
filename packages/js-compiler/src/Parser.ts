@@ -1,5 +1,6 @@
 import { Ast, List, Obj, Quoted, Vector } from "./Ast";
-import { is, isOneOf, pairs } from "./common";
+import { is, isOneOf, pairs, Span } from "./common";
+import { UnexpectedEndOfInput, UnexpectedToken } from "./errors";
 import { LBrace, LBracket, LParen, Quote, Token } from "./Token";
 
 const closingBrackets = ["RParen", "RBrace", "RBracket"] as const;
@@ -18,7 +19,7 @@ export class Parser {
     if (is(token, "LParen")) {
       return this.list(token);
     } else if (isOneOf(token, closingBrackets)) {
-      throw Error("syntax error");
+      throw new UnexpectedToken(token);
     } else if (is(token, "Quote")) {
       return this.quoted(token);
     } else if (is(token, "LBracket")) {
@@ -31,54 +32,61 @@ export class Parser {
 
   list(start: LParen): List {
     const items: Ast[] = [];
+    let last: Span = start;
     for (const token of this.tokens) {
+      last = token;
       if (isOneOf(token, invalidListClosing)) {
-        throw Error("Invalid list");
+        throw new UnexpectedToken(token);
       } else if (is(token, "RParen")) {
         return new List(start.spanTo(token), items);
       } else {
         items.push(this.expr(token));
       }
     }
-    throw Error("unexpected end of list");
+    throw new UnexpectedEndOfInput("unexpected end of list", last);
   }
 
   vector(start: LBracket): Vector {
     const items: Ast[] = [];
+    let last: Span = start;
     for (const token of this.tokens) {
+      last = token;
       if (isOneOf(token, invalidVectorClosing)) {
-        throw Error("Invalid vector");
+        throw new UnexpectedToken(token);
       } else if (is(token, "RBracket")) {
         return new Vector(start.spanTo(token), items);
       } else {
         items.push(this.expr(token));
       }
     }
-    throw Error("unexpected end of vector");
+    throw new UnexpectedEndOfInput("unexpected end of vector", last);
   }
 
   obj(start: LBrace): Obj {
     const items: Ast[] = [];
+
+    let last: Span = start;
     for (const token of this.tokens) {
+      last = token;
       if (is(token, "RBrace")) {
         const kvs = pairs(items);
         if (!kvs) {
-          throw Error("missing object property value");
+          throw new UnexpectedToken(token);
         }
         return new Obj(start.spanTo(token), kvs);
       } else if (isOneOf(token, invalidObjClosing)) {
-        throw Error("Invalid object");
+        throw new UnexpectedToken(token);
       } else {
         items.push(this.expr(token));
       }
     }
-    throw Error("unexpected end of object");
+    throw new UnexpectedEndOfInput("unexpected end of object", last);
   }
 
   quoted(start: Quote): Quoted {
     const token = this.tokens.next();
     if (token.done) {
-      throw Error("missing quoted item");
+      throw new UnexpectedEndOfInput("unexpected end of input", start);
     }
     return new Quoted(start, this.expr(token.value));
   }

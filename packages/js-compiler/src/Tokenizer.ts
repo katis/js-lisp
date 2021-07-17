@@ -1,3 +1,4 @@
+import { InvalidCharacter, InvalidToken, UnexpectedEndOfInput } from "./errors";
 import { Lexer } from "./Lexer";
 import {
   Identifier,
@@ -54,7 +55,7 @@ function lexBody(this: Tokenizer) {
       this.emit(Identifier);
       return lexBody;
     } else {
-      throw Error(`invalid character "${c}"`);
+      throw new InvalidCharacter(`invalid character "${c}"`, this.span);
     }
   }
 
@@ -75,7 +76,7 @@ function lexBody(this: Tokenizer) {
   } else if (c === "") {
     return undefined;
   }
-  throw Error(`invalid character ${c}`);
+  throw new InvalidCharacter(`invalid character "${c}"`, this.span);
 }
 
 function lexString(this: Tokenizer) {
@@ -88,7 +89,7 @@ function lexString(this: Tokenizer) {
     this.accept();
     return lexString;
   } else if (c === "") {
-    throw Error("unterminated string");
+    throw new UnexpectedEndOfInput("unterminated string constant", this.span);
   }
   return lexString;
 }
@@ -99,7 +100,7 @@ const identifierLexer = (newToken: NewToken) =>
       this.emit(newToken);
       return lexBody;
     } else {
-      throw Error(`invalid ${newToken.name.toLocaleLowerCase()}`);
+      throw new InvalidToken(newToken.name.toLocaleLowerCase(), this.span);
     }
   };
 
