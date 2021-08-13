@@ -1,13 +1,11 @@
 # JavaScripty "lisp"
 
+Clojurish lisp that transpiles to JS using the astring code generation library.
+Mostly for my own edification.
+
 ## Development
 
-Install Rust with [rustup](https://rustup.rs/), then run:
-
 ```
-cargo install wasm-pack
-npm i
+cd packages/core
 npm start
 ```
-
-Open the link in the terminal.
